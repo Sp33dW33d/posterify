@@ -1,6 +1,12 @@
 from PIL import Image, ImageOps
 from pathlib import Path
 
+# a4 dimensions
+# 210 * 297 mm
+# 8.27 x 11.69 inches
+# 2481 x 3507
+# 300 dpi
+
 def counter(start = 1) -> GeneratorExit:
     n = start
     while True:
@@ -13,13 +19,17 @@ def load_image(image_path: Path) -> Image:
 def pad_image(image: Image, padding: tuple, color: int) -> Image:
     return ImageOps.expand(img, border = padding, fill = color)
 
+def rescale_img(image: Image, factor: float) -> Image:
+    return ImageOps.scale(image, factor)
+
 def crop_image(image: Image, box: tuple) -> Image:
-    return image.crop(image, box) 
+    return image.crop(box) 
 
-def generate_tiles() -> tuple[Image]:
-    ...
+def generate_tiles(image: Image, ) -> tuple[Image]:
+    tiles = []
+    tiles.append(crop_image(image,box))
 
-def save_tiles(tiles: tuple, num: int) -> None:
+def save_tiles(tiles: tuple[Image], num: int) -> None:
     for tile in tiles:
         tile.save(f"tile_{num:03d}.jpg")
 
@@ -30,18 +40,31 @@ def generate_pdf(images: tuple[Image], output_path: Path) -> None:
         append_images=images[1:]
     )
 
+def get_crop_frame() -> tuple:
+    """decides the crop frame for the image"""
+    raise NotImplementedError
+
+def get_next_crop_frame(image_size: tuple) -> tuple:
+    raise NotImplementedError
+    
 if __name__ == "__main__":
-    IMG_PATH = Path("D:\Coding_Stuff\Codes\Python\posterify\WhatsApp Image 2025-08-31 at 6.10.45 PM.jpeg")
+    IMG_PATH = Path("D:\Coding_Stuff\miku.png")
+    DPI = 300
     img = load_image(IMG_PATH)
-    print(img.format, img.size)
-    # img.show()
-    box = (0,0,100,64)
 
-    # padded_image = pad_image(img, (700,234), color = "#FF0000")
-    pad_x = img.size[0] + 100
-    pad_y = img.size[1] + 100
+    # this is in inches
+    required_width = 8.27 * 2
+    # this is in pixels
+    required_pixel_width = required_width * DPI 
+    scaling_factor = required_pixel_width / img.width
 
-    padded_image = pad_image(img, (0,0,100,100), "#FF0000")
-    padded_image.show()
+    print(f"Current width: {img.width}px\tRequired width:{required_pixel_width}px")
+    rescaled_img = rescale_img(img, scaling_factor)
 
-    print(padded_image.format, padded_image.size)
+    print(rescaled_img.width)
+    # rescaled_img.show()
+
+    # ---
+    box = (0,0,2481,3507)
+    tile_001 = crop_image(rescaled_img, box)
+    tile_001.show()
